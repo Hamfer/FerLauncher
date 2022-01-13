@@ -1,112 +1,59 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React from 'react';
-import type {Node} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  Image,
   useColorScheme,
   View,
+  NativeModules,
+  FlatList,
+  TouchableOpacity,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const {InstalledAppsModule} = NativeModules;
 
-const Section = ({children, title}): Node => {
+const App = () => {
+  const [apps, setApps] = useState([]);
   const isDarkMode = useColorScheme() === 'dark';
+
+  useEffect(() => {
+    loadApps();
+  }, [loadApps])
+
+  const loadApps = useCallback(async () => {
+    await InstalledAppsModule.getAllApps().then(val => setApps(JSON.parse(val)));
+  }, []);
+
+  const backgroundStyle = {
+    backgroundColor: isDarkMode ? '#000' : '#fff',
+  };
+
+  function compare( a, b ) {
+    if ( a.label < b.label ){
+      return -1;
+    }
+    if ( a.label > b.label ){
+      return 1;
+    }
+    return 0;
+  }
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={backgroundStyle}>
+      <StatusBar translucent backgroundColor="#0000" />
+      <FlatList numColumns={4} contentContainerStyle={{paddingTop: 30, paddingHorizontal: 10}} data={apps.sort(compare)} renderItem={({item}) => 
+      <TouchableOpacity style={{flex: 0.25, maxWidth:'25%'}} onPress={() => InstalledAppsModule.launchApplication(item.name)}>
+        <View style={{alignItems: 'center', padding: 8}}>
+          <Image style={{width: 50, height: 50}} width={50} height={50}  source={{uri: 'data:image/png;base64,' + item.icon}} />
+          <Text style={{textAlign: 'center'}}>{item.label}</Text>
+        </View>
+      </TouchableOpacity>} />
     </View>
   );
 };
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
